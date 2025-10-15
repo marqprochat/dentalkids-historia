@@ -6,6 +6,32 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
   import.meta.url
 ).toString();
 
+// Function to check if a canvas/image is mostly blank
+const isBlankPage = (canvas: HTMLCanvasElement, threshold: number = 0.95): boolean => {
+  const context = canvas.getContext("2d");
+  if (!context) return false;
+
+  const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+  const pixels = imageData.data;
+  let whitePixels = 0;
+  const totalPixels = canvas.width * canvas.height;
+
+  // Check each pixel (RGBA format, so we check every 4th value)
+  for (let i = 0; i < pixels.length; i += 4) {
+    const r = pixels[i];
+    const g = pixels[i + 1];
+    const b = pixels[i + 2];
+    
+    // Consider a pixel "white" if all RGB values are above 240
+    if (r > 240 && g > 240 && b > 240) {
+      whitePixels++;
+    }
+  }
+
+  // If more than threshold% of pixels are white, consider it blank
+  return (whitePixels / totalPixels) > threshold;
+};
+
 export const processPDF = async (file: File): Promise<string[]> => {
   const arrayBuffer = await file.arrayBuffer();
   const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
@@ -43,7 +69,11 @@ export const processPDF = async (file: File): Promise<string[]> => {
         0, 0, halfWidth, canvas.height, // source
         0, 0, halfWidth, canvas.height  // destination
       );
-      pages.push(leftCanvas.toDataURL("image/png"));
+      
+      // Only add if not blank
+      if (!isBlankPage(leftCanvas)) {
+        pages.push(leftCanvas.toDataURL("image/png"));
+      }
     }
 
     // Right half
@@ -57,7 +87,11 @@ export const processPDF = async (file: File): Promise<string[]> => {
         halfWidth, 0, halfWidth, canvas.height, // source
         0, 0, halfWidth, canvas.height          // destination
       );
-      pages.push(rightCanvas.toDataURL("image/png"));
+      
+      // Only add if not blank
+      if (!isBlankPage(rightCanvas)) {
+        pages.push(rightCanvas.toDataURL("image/png"));
+      }
     }
   }
 
