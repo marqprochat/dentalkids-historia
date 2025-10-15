@@ -2,8 +2,10 @@ import { useState } from "react";
 import { PDFUploader } from "@/components/PDFUploader";
 import { FlipBook } from "@/components/FlipBook";
 import { processPDF } from "@/utils/pdfProcessor";
-import { BookOpenCheck, Loader2 } from "lucide-react";
+import { exportFlipbookAsHTML } from "@/utils/exportFlipbook";
+import { BookOpenCheck, Loader2, Download } from "lucide-react";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 
 const Index = () => {
   const [pages, setPages] = useState<string[]>([]);
@@ -25,6 +27,11 @@ const Index = () => {
 
   const handleReset = () => {
     setPages([]);
+  };
+
+  const handleExport = () => {
+    exportFlipbookAsHTML(pages);
+    toast.success("Flipbook exportado com sucesso!");
   };
 
   return (
@@ -57,13 +64,21 @@ const Index = () => {
             <PDFUploader onFileSelect={handleFileSelect} />
           ) : (
             <div className="space-y-8">
-              <div className="flex justify-center">
-                <button
+              <div className="flex justify-center gap-3">
+                <Button
                   onClick={handleReset}
-                  className="px-6 py-2 text-sm bg-secondary hover:bg-secondary/80 text-secondary-foreground rounded-lg transition-all hover:shadow-md"
+                  variant="secondary"
                 >
                   Carregar outro PDF
-                </button>
+                </Button>
+                <Button
+                  onClick={handleExport}
+                  variant="default"
+                  className="gap-2"
+                >
+                  <Download className="w-4 h-4" />
+                  Exportar Flipbook
+                </Button>
               </div>
               <FlipBook pages={pages} />
             </div>
