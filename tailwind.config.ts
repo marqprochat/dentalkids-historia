@@ -47,6 +47,11 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        book: {
+          page: "hsl(var(--book-page))",
+          spine: "hsl(var(--book-spine))",
+          shadow: "hsl(var(--book-shadow))",
+        },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",
