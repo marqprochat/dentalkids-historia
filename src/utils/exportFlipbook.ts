@@ -3,11 +3,11 @@ export const exportFlipbookAsHTML = (pages: string[]) => {
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>PDF Flipbook</title>
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script src="https://unpkg.com/react-pageflip@2.0.3/dist/js/react-pageflip.browser.js"></script>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/page-flip@2.0.7/dist/js/page-flip.browser.js"></script>
   <style>
     * {
       margin: 0;
@@ -123,65 +123,80 @@ export const exportFlipbookAsHTML = (pages: string[]) => {
 
   <script>
     const { useState, useRef, useEffect } = React;
-    const HTMLFlipBook = window.ReactPageFlip;
-
     const pages = ${JSON.stringify(pages)};
 
     function FlipBookApp() {
       const bookRef = useRef(null);
+      const containerRef = useRef(null);
       const [currentPage, setCurrentPage] = useState(0);
+      const [pageFlip, setPageFlip] = useState(null);
+
+      useEffect(() => {
+        if (containerRef.current && !pageFlip && window.PageFlip) {
+          try {
+            const book = new window.PageFlip(containerRef.current, {
+              width: window.innerWidth > 768 ? 550 : window.innerWidth * 0.85,
+              height: window.innerWidth > 768 ? 733 : window.innerWidth * 1.1,
+              size: 'stretch',
+              minWidth: 315,
+              maxWidth: 1000,
+              minHeight: 400,
+              maxHeight: 1533,
+              maxShadowOpacity: 0.5,
+              showCover: true,
+              mobileScrollSupport: true,
+              drawShadow: true,
+              flippingTime: 800,
+              usePortrait: true,
+              autoSize: false,
+              useMouseEvents: true,
+              swipeDistance: 30,
+              showPageCorners: true,
+              disableFlipByClick: false
+            });
+
+            book.loadFromHTML(document.querySelectorAll('.page'));
+            
+            book.on('flip', (e) => {
+              setCurrentPage(e.data);
+            });
+
+            setPageFlip(book);
+          } catch (error) {
+            console.error('Erro ao inicializar flipbook:', error);
+          }
+        }
+      }, [pageFlip]);
 
       const nextPage = () => {
-        if (bookRef.current) {
-          bookRef.current.pageFlip().flipNext();
+        if (pageFlip) {
+          pageFlip.flipNext();
         }
       };
 
       const prevPage = () => {
-        if (bookRef.current) {
-          bookRef.current.pageFlip().flipPrev();
+        if (pageFlip) {
+          pageFlip.flipPrev();
         }
       };
 
-      const onFlip = (e) => {
-        setCurrentPage(e.data);
-      };
-
       return React.createElement('div', { style: { width: '100%' } },
-        React.createElement('div', { className: 'flipbook-wrapper' },
-          React.createElement(HTMLFlipBook, {
-            ref: bookRef,
-            width: 550,
-            height: 733,
-            size: 'stretch',
-            minWidth: 315,
-            maxWidth: 1000,
-            minHeight: 400,
-            maxHeight: 1533,
-            maxShadowOpacity: 0.5,
-            showCover: true,
-            mobileScrollSupport: true,
-            onFlip: onFlip,
-            startPage: 0,
-            drawShadow: true,
-            flippingTime: 800,
-            usePortrait: true,
-            autoSize: true,
-            useMouseEvents: true,
-            swipeDistance: 30,
-            showPageCorners: true,
-            disableFlipByClick: false
-          },
-            pages.map((page, index) =>
-              React.createElement('div', {
-                key: index,
-                className: 'page'
-              },
-                React.createElement('img', {
-                  src: page,
-                  alt: 'Página ' + (index + 1)
-                })
-              )
+        React.createElement('div', { 
+          className: 'flipbook-wrapper',
+          ref: containerRef,
+          id: 'book'
+        },
+          pages.map((page, index) =>
+            React.createElement('div', {
+              key: index,
+              className: 'page',
+              'data-density': 'hard'
+            },
+              React.createElement('img', {
+                src: page,
+                alt: 'Página ' + (index + 1),
+                style: { width: '100%', height: '100%', objectFit: 'contain' }
+              })
             )
           )
         ),
@@ -201,8 +216,10 @@ export const exportFlipbookAsHTML = (pages: string[]) => {
       );
     }
 
-    const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(React.createElement(FlipBookApp));
+    window.addEventListener('load', () => {
+      const root = ReactDOM.createRoot(document.getElementById('root'));
+      root.render(React.createElement(FlipBookApp));
+    });
   </script>
 </body>
 </html>`;
