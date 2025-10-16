@@ -41,8 +41,45 @@ const fetchMinhasHistorias = async (): Promise<Historia[]> => {
 };
 
 const deleteHistoria = async (id: string) => {
-  const { error } = await supabase.from("flipbooks").delete().eq("id", id);
-  if (error) throw error;
+  // 1. Pega o caminho dos arquivos no Storage
+  const { data: historiaData, error: fetchError } = await supabase
+    .from('flipbooks')
+    .select('storage_path')
+    .eq('id', id)
+    .single();
+
+  if (fetchError) {
+    console.error("Erro ao buscar história para deletar:", fetchError);
+    throw new Error("Não foi possível encontrar a história para excluir.");
+  }
+
+  // 2. Se houver arquivos, remove a pasta do Storage
+  if (historiaData?.storage_path) {
+    const { data: files, error: listError } = await supabase.storage
+      .from('historias_pages')
+      .list(historiaData.storage_path);
+
+    if (listError) {
+      console.error("Erro ao listar arquivos no storage:", listError);
+      toast.error("Não foi possível limpar os arquivos antigos, mas a história será excluída.");
+    }
+
+    if (files && files.length > 0) {
+      const filePaths = files.map(file => `${historiaData.storage_path}/${file.name}`);
+      const { error: removeError } = await supabase.storage
+        .from('historias_pages')
+        .remove(filePaths);
+      
+      if (removeError) {
+        console.error("Erro ao remover arquivos do storage:", removeError);
+        toast.error("Não foi possível limpar os arquivos antigos, mas a história será excluída.");
+      }
+    }
+  }
+
+  // 3. Deleta o registro da história no banco de dados
+  const { error: deleteError } = await supabase.from("flipbooks").delete().eq("id", id);
+  if (deleteError) throw deleteError;
 };
 
 const MinhasHistorias = () => {
@@ -163,7 +200,7 @@ const MinhasHistorias = () => {
                           <AlertDialogHeader>
                             <AlertDialogTitle>Tem certeza absoluta?</AlertDialogTitle>
                             <AlertDialogDescription>
-                              Esta ação não pode ser desfeita. Isso excluirá permanentemente sua história.
+                              Esta ação não pode ser desfeita. Isso excluirá permanentemente sua história e todos os seus arquivos.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>

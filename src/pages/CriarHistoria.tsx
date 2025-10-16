@@ -10,6 +10,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Logo from "@/components/Logo";
 
+// Função auxiliar para converter a imagem de base64 para um formato de upload (Blob)
+const dataURLtoBlob = async (dataUrl: string): Promise<Blob> => {
+    const res = await fetch(dataUrl);
+    return await res.blob();
+}
+
 const CriarHistoria = () => {
   const [title, setTitle] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
@@ -46,14 +52,43 @@ const CriarHistoria = () => {
       const processedPages = await processPDF(file);
       toast.success(`${processedPages.length} páginas processadas com sucesso!`);
 
-      setProcessingStatus("Salvando sua história...");
+      const pageUrls: string[] = [];
+      const storagePath = `${user.id}/${Date.now()}`;
+
+      for (let i = 0; i < processedPages.length; i++) {
+        setProcessingStatus(`Fazendo upload da página ${i + 1} de ${processedPages.length}...`);
+        const pageData = processedPages[i];
+        const blob = await dataURLtoBlob(pageData);
+
+        const filePath = `${storagePath}/page_${i + 1}.png`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('historias_pages')
+          .upload(filePath, blob, {
+            cacheControl: '3600',
+            upsert: false,
+          });
+
+        if (uploadError) {
+          throw uploadError;
+        }
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('historias_pages')
+          .getPublicUrl(filePath);
+        
+        pageUrls.push(publicUrl);
+      }
+
+      setProcessingStatus("Finalizando e salvando sua história...");
       const { data, error } = await supabase
         .from("flipbooks")
         .insert([{ 
-          pages: processedPages, 
+          pages: pageUrls,
           user_id: user.id, 
           title: title.trim(),
-          page_count: processedPages.length
+          page_count: processedPages.length,
+          storage_path: storagePath
         }])
         .select("id")
         .single();
@@ -66,9 +101,9 @@ const CriarHistoria = () => {
         toast.success("História salva! Redirecionando...");
         navigate(`/historia/${data.id}`);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erro ao criar história:", error);
-      toast.error("Erro ao criar a história. Tente novamente.");
+      toast.error(`Erro ao criar a história: ${error.message}`);
       setIsProcessing(false);
     }
   };
