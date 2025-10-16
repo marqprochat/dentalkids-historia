@@ -6,6 +6,7 @@ import { Loader2, AlertTriangle, Share2, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
+import Logo from "@/components/Logo";
 
 const FlipbookViewer = () => {
   const { id } = useParams<{ id: string }>();
@@ -80,17 +81,15 @@ const FlipbookViewer = () => {
     <div className="min-h-screen bg-gradient-to-br from-background via-book-page/30 to-background">
       <div className="container mx-auto px-4 py-8">
         <header className="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4">
+          <Logo linkTo={isAuthenticated ? "/" : undefined} className="h-10" />
           {isAuthenticated && (
             <Button asChild variant="outline" className="gap-2">
-              <Link to="/">
+              <Link to="/create">
                 <Home className="w-4 h-4" />
                 Criar Novo Flipbook
               </Link>
             </Button>
           )}
-          <h1 className="text-3xl font-bold text-center bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-            Seu Flipbook
-          </h1>
           <Button onClick={handleShare} className="gap-2">
             <Share2 className="w-4 h-4" />
             Compartilhar

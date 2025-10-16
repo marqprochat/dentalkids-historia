@@ -17,6 +17,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import Logo from "@/components/Logo";
 
 interface Flipbook {
   id: string;
@@ -97,12 +98,10 @@ const MyFlipbooks = () => {
     <div className="min-h-screen bg-gradient-to-br from-background via-book-page/30 to-background">
       <div className="container mx-auto px-4 py-8">
         <header className="flex justify-between items-center mb-12">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-            Meus Flipbooks
-          </h1>
+          <Logo linkTo="/" className="h-12" />
           <div className="flex gap-4">
             <Button asChild className="gap-2">
-              <Link to="/">
+              <Link to="/create">
                 <PlusCircle className="w-4 h-4" />
                 Novo Flipbook
               </Link>
@@ -122,7 +121,7 @@ const MyFlipbooks = () => {
                 Você ainda não criou nenhum flipbook.
               </p>
               <Button asChild className="mt-6">
-                <Link to="/">Começar a criar</Link>
+                <Link to="/create">Começar a criar</Link>
               </Button>
             </div>
           ) : (

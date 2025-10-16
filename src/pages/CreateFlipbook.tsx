@@ -2,10 +2,11 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { PDFUploader } from "@/components/PDFUploader";
 import { processPDF } from "@/utils/pdfProcessor";
-import { BookOpenCheck, Loader2, LogOut, Home } from "lucide-react";
+import { Loader2, LogOut, Home } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import Logo from "@/components/Logo";
 
 const CreateFlipbook = () => {
   const [isProcessing, setIsProcessing] = useState(false);
@@ -63,15 +64,7 @@ const CreateFlipbook = () => {
     <div className="min-h-screen bg-gradient-to-br from-background via-book-page/30 to-background">
       <div className="container mx-auto px-4 py-8">
         <header className="flex justify-between items-center mb-12 space-y-4">
-          <div className="flex items-center gap-3">
-            <div className="relative">
-              <div className="absolute inset-0 bg-primary/30 blur-xl rounded-full animate-pulse" />
-              <BookOpenCheck className="relative w-12 h-12 text-primary" />
-            </div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              Criar Flipbook
-            </h1>
-          </div>
+          <Logo linkTo="/" className="h-12" />
           <div className="flex gap-4">
             <Button asChild variant="outline" className="gap-2">
               <Link to="/">

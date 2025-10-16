@@ -17,7 +17,7 @@ All colors MUST be HSL.
     --popover: 40 30% 98%;
     --popover-foreground: 30 15% 15%;
 
-    --primary: 25 60% 45%;
+    --primary: 208 100% 50%; /* Novo Azul */
     --primary-foreground: 40 30% 98%;
 
     --secondary: 35 40% 88%;
@@ -26,7 +26,7 @@ All colors MUST be HSL.
     --muted: 35 20% 90%;
     --muted-foreground: 30 10% 45%;
 
-    --accent: 28 70% 55%;
+    --accent: 30 100% 50%; /* Novo Laranja */
     --accent-foreground: 40 30% 98%;
 
     --destructive: 0 84.2% 60.2%;
@@ -34,7 +34,7 @@ All colors MUST be HSL.
 
     --border: 35 20% 85%;
     --input: 35 20% 90%;
-    --ring: 25 60% 45%;
+    --ring: 208 100% 50%; /* Novo Azul */
 
     --radius: 0.75rem;
     
@@ -81,7 +81,7 @@ All colors MUST be HSL.
     --popover: 30 25% 15%;
     --popover-foreground: 40 30% 95%;
 
-    --primary: 28 70% 55%;
+    --primary: 208 100% 60%; /* Novo Azul (mais claro para dark mode) */
     --primary-foreground: 30 20% 12%;
 
     --secondary: 30 15% 25%;
@@ -90,7 +90,7 @@ All colors MUST be HSL.
     --muted: 30 15% 20%;
     --muted-foreground: 35 10% 65%;
 
-    --accent: 25 60% 45%;
+    --accent: 30 100% 60%; /* Novo Laranja (mais claro para dark mode) */
     --accent-foreground: 40 30% 98%;
 
     --destructive: 0 62.8% 50%;
@@ -98,7 +98,7 @@ All colors MUST be HSL.
 
     --border: 30 15% 25%;
     --input: 30 15% 25%;
-    --ring: 28 70% 55%;
+    --ring: 208 100% 60%; /* Novo Azul */
     
     --book-page: 30 20% 18%;
     --book-spine: 28 40% 25%;
