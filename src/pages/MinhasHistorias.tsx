@@ -19,51 +19,51 @@ import {
 } from "@/components/ui/alert-dialog";
 import Logo from "@/components/Logo";
 
-interface Flipbook {
+interface Historia {
   id: string;
   created_at: string;
   title: string;
   page_count: number;
 }
 
-const fetchMyFlipbooks = async (): Promise<Flipbook[]> => {
+const fetchMinhasHistorias = async (): Promise<Historia[]> => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Usuário não autenticado.");
 
   const { data, error } = await supabase
     .from("flipbooks")
-    .select("id, created_at, title, page_count") // Apenas metadados, sem as páginas
+    .select("id, created_at, title, page_count")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });
 
   if (error) throw error;
-  return data as Flipbook[];
+  return data as Historia[];
 };
 
-const deleteFlipbook = async (id: string) => {
+const deleteHistoria = async (id: string) => {
   const { error } = await supabase.from("flipbooks").delete().eq("id", id);
   if (error) throw error;
 };
 
-const MyFlipbooks = () => {
+const MinhasHistorias = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const [flipbookToDelete, setFlipbookToDelete] = useState<string | null>(null);
+  const [historiaParaExcluir, setHistoriaParaExcluir] = useState<string | null>(null);
 
-  const { data: flipbooks, isLoading, error } = useQuery<Flipbook[], Error>({
-    queryKey: ["myFlipbooks"],
-    queryFn: fetchMyFlipbooks,
+  const { data: historias, isLoading, error } = useQuery<Historia[], Error>({
+    queryKey: ["minhasHistorias"],
+    queryFn: fetchMinhasHistorias,
   });
 
   const deleteMutation = useMutation({
-    mutationFn: deleteFlipbook,
+    mutationFn: deleteHistoria,
     onSuccess: () => {
-      toast.success("Flipbook excluído com sucesso!");
-      queryClient.invalidateQueries({ queryKey: ["myFlipbooks"] });
-      setFlipbookToDelete(null);
+      toast.success("História excluída com sucesso!");
+      queryClient.invalidateQueries({ queryKey: ["minhasHistorias"] });
+      setHistoriaParaExcluir(null);
     },
     onError: (err) => {
-      toast.error("Erro ao excluir flipbook.");
+      toast.error("Erro ao excluir história.");
       console.error(err);
     },
   });
@@ -90,7 +90,7 @@ const MyFlipbooks = () => {
   if (error) {
     return (
       <div className="p-8 text-center text-destructive">
-        Erro ao carregar seus flipbooks: {error.message}
+        Erro ao carregar suas histórias: {error.message}
       </div>
     );
   }
@@ -104,7 +104,7 @@ const MyFlipbooks = () => {
             <Button asChild className="gap-2">
               <Link to="/create">
                 <PlusCircle className="w-4 h-4" />
-                Novo Flipbook
+                Nova História
               </Link>
             </Button>
             <Button variant="outline" onClick={handleLogout} className="gap-2">
@@ -115,11 +115,11 @@ const MyFlipbooks = () => {
         </header>
 
         <main>
-          {flipbooks && flipbooks.length === 0 ? (
+          {historias && historias.length === 0 ? (
             <div className="text-center p-16 border-2 border-dashed border-border rounded-lg bg-card/50">
               <BookOpen className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
               <p className="text-xl font-medium text-muted-foreground">
-                Você ainda não criou nenhum flipbook.
+                Você ainda não criou nenhuma história.
               </p>
               <Button asChild className="mt-6">
                 <Link to="/create">Começar a criar</Link>
@@ -127,32 +127,32 @@ const MyFlipbooks = () => {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {flipbooks?.map((flipbook) => (
-                <Card key={flipbook.id} className="hover:shadow-xl transition-shadow duration-300">
+              {historias?.map((historia) => (
+                <Card key={historia.id} className="hover:shadow-xl transition-shadow duration-300">
                   <CardHeader>
                     <CardTitle className="text-lg truncate">
-                      {flipbook.title}
+                      {historia.title}
                     </CardTitle>
                     <CardDescription>
-                      Criado em {new Date(flipbook.created_at).toLocaleDateString()}
+                      Criado em {new Date(historia.created_at).toLocaleDateString()}
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="text-sm text-muted-foreground">
-                      {flipbook.page_count} páginas
+                      {historia.page_count} páginas
                     </div>
                     <div className="flex gap-3">
                       <Button asChild className="flex-1 gap-2">
-                        <Link to={`/flipbook/${flipbook.id}`}>
+                        <Link to={`/historia/${historia.id}`}>
                           <BookOpen className="w-4 h-4" />
                           Ver
                         </Link>
                       </Button>
                       
-                      <AlertDialog open={flipbookToDelete === flipbook.id} onOpenChange={(open) => setFlipbookToDelete(open ? flipbook.id : null)}>
+                      <AlertDialog open={historiaParaExcluir === historia.id} onOpenChange={(open) => setHistoriaParaExcluir(open ? historia.id : null)}>
                         <AlertDialogTrigger asChild>
                           <Button variant="destructive" size="icon" disabled={deleteMutation.isPending}>
-                            {deleteMutation.isPending && flipbookToDelete === flipbook.id ? (
+                            {deleteMutation.isPending && historiaParaExcluir === historia.id ? (
                               <Loader2 className="w-4 h-4 animate-spin" />
                             ) : (
                               <Trash2 className="w-4 h-4" />
@@ -163,13 +163,13 @@ const MyFlipbooks = () => {
                           <AlertDialogHeader>
                             <AlertDialogTitle>Tem certeza absoluta?</AlertDialogTitle>
                             <AlertDialogDescription>
-                              Esta ação não pode ser desfeita. Isso excluirá permanentemente seu flipbook.
+                              Esta ação não pode ser desfeita. Isso excluirá permanentemente sua história.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
                             <AlertDialogCancel>Cancelar</AlertDialogCancel>
                             <AlertDialogAction 
-                              onClick={() => deleteMutation.mutate(flipbook.id)}
+                              onClick={() => deleteMutation.mutate(historia.id)}
                               className="bg-destructive hover:bg-destructive/90"
                             >
                               Excluir
@@ -189,4 +189,4 @@ const MyFlipbooks = () => {
   );
 };
 
-export default MyFlipbooks;
+export default MinhasHistorias;

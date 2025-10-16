@@ -24,7 +24,7 @@ const Login = () => {
     <div className="flex items-center justify-center min-h-screen bg-background p-4">
       <div className="w-full max-w-md p-8 space-y-6 bg-card rounded-lg shadow-xl border border-border">
         <h1 className="text-3xl font-bold text-center text-primary">Acesso do Criador</h1>
-        <p className="text-center text-muted-foreground">Faça login para criar e gerenciar seus Flipbooks.</p>
+        <p className="text-center text-muted-foreground">Faça login para criar e gerenciar suas Histórias.</p>
         <Auth
           supabaseClient={supabase}
           providers={[]}

@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Logo from "@/components/Logo";
 
-const CreateFlipbook = () => {
+const CriarHistoria = () => {
   const [title, setTitle] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingStatus, setProcessingStatus] = useState("");
@@ -29,7 +29,7 @@ const CreateFlipbook = () => {
 
   const handleFileSelect = async (file: File) => {
     if (!title.trim()) {
-      toast.error("Por favor, insira um título para o Flipbook.");
+      toast.error("Por favor, insira um título para a História.");
       return;
     }
 
@@ -37,7 +37,7 @@ const CreateFlipbook = () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        toast.error("Você precisa estar logado para criar um flipbook.");
+        toast.error("Você precisa estar logado para criar uma história.");
         navigate('/login');
         return;
       }
@@ -46,14 +46,14 @@ const CreateFlipbook = () => {
       const processedPages = await processPDF(file);
       toast.success(`${processedPages.length} páginas processadas com sucesso!`);
 
-      setProcessingStatus("Salvando seu flipbook...");
+      setProcessingStatus("Salvando sua história...");
       const { data, error } = await supabase
         .from("flipbooks")
         .insert([{ 
           pages: processedPages, 
           user_id: user.id, 
           title: title.trim(),
-          page_count: processedPages.length // Salva a contagem de páginas
+          page_count: processedPages.length
         }])
         .select("id")
         .single();
@@ -63,12 +63,12 @@ const CreateFlipbook = () => {
       }
 
       if (data) {
-        toast.success("Flipbook salvo! Redirecionando...");
-        navigate(`/flipbook/${data.id}`);
+        toast.success("História salva! Redirecionando...");
+        navigate(`/historia/${data.id}`);
       }
     } catch (error) {
-      console.error("Erro ao criar flipbook:", error);
-      toast.error("Erro ao criar o flipbook. Tente novamente.");
+      console.error("Erro ao criar história:", error);
+      toast.error("Erro ao criar a história. Tente novamente.");
       setIsProcessing(false);
     }
   };
@@ -82,7 +82,7 @@ const CreateFlipbook = () => {
             <Button asChild variant="outline" className="gap-2">
               <Link to="/">
                 <Home className="w-4 h-4" />
-                Meus Flipbooks
+                Minhas Histórias
               </Link>
             </Button>
             <Button variant="outline" onClick={handleLogout} className="gap-2">
@@ -103,9 +103,9 @@ const CreateFlipbook = () => {
           ) : (
             <div className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="flipbook-title" className="text-lg font-semibold">Título do Flipbook</Label>
+                <Label htmlFor="historia-title" className="text-lg font-semibold">Título da História</Label>
                 <Input
-                  id="flipbook-title"
+                  id="historia-title"
                   placeholder="Ex: A Aventura do Dentista Mirim"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
@@ -125,4 +125,4 @@ const CreateFlipbook = () => {
   );
 };
 
-export default CreateFlipbook;
+export default CriarHistoria;

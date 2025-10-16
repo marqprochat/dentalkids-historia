@@ -1,4 +1,4 @@
-import MyFlipbooks from "./MyFlipbooks";
+import MinhasHistorias from "./MinhasHistorias";
 
 // A rota principal agora aponta para o dashboard
-export default MyFlipbooks;
+export default MinhasHistorias;

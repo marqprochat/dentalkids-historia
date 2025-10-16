@@ -1,14 +1,14 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { FlipBook } from "@/components/FlipBook";
+import { Historia } from "@/components/Historia";
 import { Loader2, AlertTriangle, Share2, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import Logo from "@/components/Logo";
 
-const FlipbookViewer = () => {
+const VisualizadorHistoria = () => {
   const { id } = useParams<{ id: string }>();
   const [pages, setPages] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -16,9 +16,9 @@ const FlipbookViewer = () => {
   const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
 
   useEffect(() => {
-    const fetchFlipbook = async () => {
+    const fetchHistoria = async () => {
       if (!id) {
-        setError("ID do Flipbook não encontrado.");
+        setError("ID da História não encontrado.");
         setLoading(false);
         return;
       }
@@ -32,13 +32,13 @@ const FlipbookViewer = () => {
           .single();
 
         if (error) {
-          throw new Error("Flipbook não encontrado ou erro na busca.");
+          throw new Error("História não encontrada ou erro na busca.");
         }
 
         if (data && Array.isArray(data.pages)) {
           setPages(data.pages);
         } else {
-          throw new Error("Flipbook não encontrado ou formato de dados inválido.");
+          throw new Error("História não encontrada ou formato de dados inválido.");
         }
       } catch (err: any) {
         setError(err.message);
@@ -47,7 +47,7 @@ const FlipbookViewer = () => {
       }
     };
 
-    fetchFlipbook();
+    fetchHistoria();
   }, [id]);
 
   const handleShare = () => {
@@ -59,7 +59,7 @@ const FlipbookViewer = () => {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen gap-4">
         <Loader2 className="w-12 h-12 text-primary animate-spin" />
-        <p className="text-lg text-muted-foreground">Carregando seu flipbook...</p>
+        <p className="text-lg text-muted-foreground">Carregando sua história...</p>
       </div>
     );
   }
@@ -86,7 +86,7 @@ const FlipbookViewer = () => {
             <Button asChild variant="outline" className="gap-2">
               <Link to="/create">
                 <Home className="w-4 h-4" />
-                Criar Novo Flipbook
+                Criar Nova História
               </Link>
             </Button>
           )}
@@ -96,11 +96,11 @@ const FlipbookViewer = () => {
           </Button>
         </header>
         <main className="max-w-6xl mx-auto">
-          <FlipBook pages={pages} />
+          <Historia pages={pages} />
         </main>
       </div>
     </div>
   );
 };
 
-export default FlipbookViewer;
+export default VisualizadorHistoria;
