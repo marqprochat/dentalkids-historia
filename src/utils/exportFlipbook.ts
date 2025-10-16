@@ -21,13 +21,18 @@ export const exportFlipbookAsHTML = (pages: string[]) => {
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
+      justify-content: flex-start;
       padding: 20px;
       color: white;
+      overflow-x: hidden;
     }
     .container {
       max-width: 1200px;
       width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
     }
     .header {
       text-align: center;
@@ -49,12 +54,17 @@ export const exportFlipbookAsHTML = (pages: string[]) => {
       margin: 0 auto;
       display: flex;
       justify-content: center;
+      align-items: center;
       width: 100%;
       max-width: 900px;
+      flex: 1;
     }
     #book {
       width: 100% !important;
       height: auto !important;
+      display: flex !important;
+      justify-content: center !important;
+      align-items: center !important;
     }
     .page {
       background: #f5f1e8;
@@ -111,11 +121,32 @@ export const exportFlipbookAsHTML = (pages: string[]) => {
       text-align: center;
     }
     @media (max-width: 768px) {
+      body {
+        padding: 10px;
+        justify-content: flex-start;
+      }
       h1 {
-        font-size: 1.8rem;
+        font-size: 1.5rem;
+        margin-bottom: 5px;
+      }
+      .header {
+        margin-bottom: 20px;
+      }
+      .header p {
+        font-size: 0.9rem;
+      }
+      .container {
+        gap: 15px;
       }
       .flipbook-wrapper {
         max-width: 100%;
+        flex: 1;
+        display: flex;
+        align-items: center;
+      }
+      .controls {
+        margin-top: 20px;
+        padding: 12px 20px;
       }
     }
   </style>
@@ -144,24 +175,34 @@ export const exportFlipbookAsHTML = (pages: string[]) => {
           try {
             const isMobile = window.innerWidth <= 768;
             const containerWidth = containerRef.current.offsetWidth;
-            const pageWidth = isMobile ? containerWidth * 0.45 : Math.min(containerWidth * 0.4, 400);
-            const pageHeight = pageWidth * 1.414; // A4 ratio
+            
+            // Calcula tamanho baseado na tela disponível
+            let pageWidth, pageHeight;
+            
+            if (isMobile) {
+              // No mobile, usa 90% da largura da tela para cada página
+              pageWidth = Math.min(containerWidth * 0.9, window.innerWidth * 0.45);
+              pageHeight = Math.min(window.innerHeight * 0.6, pageWidth * 1.414);
+            } else {
+              pageWidth = Math.min(containerWidth * 0.4, 400);
+              pageHeight = pageWidth * 1.414;
+            }
 
             const book = new window.PageFlip(containerRef.current, {
               width: pageWidth,
               height: pageHeight,
               size: 'fixed',
-              minWidth: 200,
-              maxWidth: 500,
-              minHeight: 283,
-              maxHeight: 707,
+              minWidth: isMobile ? 150 : 200,
+              maxWidth: isMobile ? window.innerWidth * 0.48 : 500,
+              minHeight: isMobile ? 200 : 283,
+              maxHeight: isMobile ? window.innerHeight * 0.7 : 707,
               maxShadowOpacity: 0.5,
               showCover: true,
               mobileScrollSupport: true,
               drawShadow: true,
               flippingTime: 800,
-              usePortrait: true,
-              autoSize: true,
+              usePortrait: isMobile,
+              autoSize: false,
               useMouseEvents: true,
               swipeDistance: 30,
               showPageCorners: true,
