@@ -13,6 +13,10 @@ const AuthLayout = () => {
       const { data: { session } } = await supabase.auth.getSession();
       setSession(session);
       setLoading(false);
+      
+      if (!session) {
+        navigate('/login');
+      }
     };
 
     checkSession();
@@ -36,7 +40,7 @@ const AuthLayout = () => {
   }
 
   if (!session) {
-    // Se não estiver logado, redireciona para o login (embora o useEffect já faça isso)
+    // Se não houver sessão após o carregamento, não renderiza nada, pois o navigate já foi chamado.
     return null; 
   }
 
