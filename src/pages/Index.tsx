@@ -2,7 +2,7 @@ import { useState } from "react";
 import { PDFUploader } from "@/components/PDFUploader";
 import { FlipBook } from "@/components/FlipBook";
 import { processPDF } from "@/utils/pdfProcessor";
-import { exportFlipbookAsHTML } from "@/utils/exportFlipbook";
+import { exportFlipbookAsPDF } from "@/utils/exportFlipbook";
 import { BookOpenCheck, Loader2, Download } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -29,9 +29,13 @@ const Index = () => {
     setPages([]);
   };
 
-  const handleExport = () => {
-    exportFlipbookAsHTML(pages);
-    toast.success("Flipbook exportado com sucesso!");
+  const handleExport = async () => {
+    try {
+      await exportFlipbookAsPDF(pages);
+      toast.success("PDF exportado com sucesso!");
+    } catch (error) {
+      toast.error("Erro ao exportar PDF");
+    }
   };
 
   return (
