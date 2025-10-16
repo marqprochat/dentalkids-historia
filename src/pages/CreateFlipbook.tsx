@@ -6,9 +6,12 @@ import { Loader2, LogOut, Home } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import Logo from "@/components/Logo";
 
 const CreateFlipbook = () => {
+  const [title, setTitle] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingStatus, setProcessingStatus] = useState("");
   const navigate = useNavigate();
@@ -25,6 +28,11 @@ const CreateFlipbook = () => {
   };
 
   const handleFileSelect = async (file: File) => {
+    if (!title.trim()) {
+      toast.error("Por favor, insira um título para o Flipbook.");
+      return;
+    }
+
     setIsProcessing(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -41,7 +49,7 @@ const CreateFlipbook = () => {
       setProcessingStatus("Salvando seu flipbook...");
       const { data, error } = await supabase
         .from("flipbooks")
-        .insert([{ pages: processedPages, user_id: user.id }])
+        .insert([{ pages: processedPages, user_id: user.id, title: title.trim() }])
         .select("id")
         .single();
 
@@ -88,7 +96,19 @@ const CreateFlipbook = () => {
               </p>
             </div>
           ) : (
-            <PDFUploader onFileSelect={handleFileSelect} />
+            <div className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="flipbook-title" className="text-lg font-semibold">Título do Flipbook</Label>
+                <Input
+                  id="flipbook-title"
+                  placeholder="Ex: A Aventura do Dentista Mirim"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  className="text-lg p-6"
+                />
+              </div>
+              <PDFUploader onFileSelect={handleFileSelect} />
+            </div>
           )}
         </main>
 
