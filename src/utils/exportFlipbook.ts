@@ -44,22 +44,30 @@ export const exportFlipbookAsHTML = (pages: string[]) => {
     .flipbook-wrapper {
       position: relative;
       border-radius: 16px;
-      overflow: hidden;
+      overflow: visible;
       box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
       margin: 0 auto;
       display: flex;
       justify-content: center;
+      width: 100%;
+      max-width: 900px;
+    }
+    #book {
+      width: 100% !important;
+      height: auto !important;
     }
     .page {
       background: #f5f1e8;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 8px;
+      padding: 0;
+      width: 100%;
+      height: 100%;
     }
     .page img {
-      max-width: 100%;
-      max-height: 100%;
+      width: 100%;
+      height: 100%;
       object-fit: contain;
     }
     .controls {
@@ -134,21 +142,26 @@ export const exportFlipbookAsHTML = (pages: string[]) => {
       useEffect(() => {
         if (containerRef.current && !pageFlip && window.PageFlip) {
           try {
+            const isMobile = window.innerWidth <= 768;
+            const containerWidth = containerRef.current.offsetWidth;
+            const pageWidth = isMobile ? containerWidth * 0.45 : Math.min(containerWidth * 0.4, 400);
+            const pageHeight = pageWidth * 1.414; // A4 ratio
+
             const book = new window.PageFlip(containerRef.current, {
-              width: window.innerWidth > 768 ? 550 : window.innerWidth * 0.85,
-              height: window.innerWidth > 768 ? 733 : window.innerWidth * 1.1,
-              size: 'stretch',
-              minWidth: 315,
-              maxWidth: 1000,
-              minHeight: 400,
-              maxHeight: 1533,
+              width: pageWidth,
+              height: pageHeight,
+              size: 'fixed',
+              minWidth: 200,
+              maxWidth: 500,
+              minHeight: 283,
+              maxHeight: 707,
               maxShadowOpacity: 0.5,
               showCover: true,
               mobileScrollSupport: true,
               drawShadow: true,
               flippingTime: 800,
               usePortrait: true,
-              autoSize: false,
+              autoSize: true,
               useMouseEvents: true,
               swipeDistance: 30,
               showPageCorners: true,
