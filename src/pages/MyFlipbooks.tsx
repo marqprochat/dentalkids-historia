@@ -22,8 +22,8 @@ import Logo from "@/components/Logo";
 interface Flipbook {
   id: string;
   created_at: string;
-  pages: string[];
   title: string;
+  page_count: number;
 }
 
 const fetchMyFlipbooks = async (): Promise<Flipbook[]> => {
@@ -32,7 +32,7 @@ const fetchMyFlipbooks = async (): Promise<Flipbook[]> => {
 
   const { data, error } = await supabase
     .from("flipbooks")
-    .select("id, created_at, pages, title")
+    .select("id, created_at, title, page_count") // Apenas metadados, sem as páginas
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });
 
@@ -139,7 +139,7 @@ const MyFlipbooks = () => {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="text-sm text-muted-foreground">
-                      {flipbook.pages.length} páginas
+                      {flipbook.page_count} páginas
                     </div>
                     <div className="flex gap-3">
                       <Button asChild className="flex-1 gap-2">

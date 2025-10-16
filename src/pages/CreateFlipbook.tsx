@@ -49,7 +49,12 @@ const CreateFlipbook = () => {
       setProcessingStatus("Salvando seu flipbook...");
       const { data, error } = await supabase
         .from("flipbooks")
-        .insert([{ pages: processedPages, user_id: user.id, title: title.trim() }])
+        .insert([{ 
+          pages: processedPages, 
+          user_id: user.id, 
+          title: title.trim(),
+          page_count: processedPages.length // Salva a contagem de páginas
+        }])
         .select("id")
         .single();
 
