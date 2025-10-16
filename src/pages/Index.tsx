@@ -1,40 +1,42 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { PDFUploader } from "@/components/PDFUploader";
-import { FlipBook } from "@/components/FlipBook";
 import { processPDF } from "@/utils/pdfProcessor";
-import { exportFlipbookAsPDF } from "@/utils/exportFlipbook";
-import { BookOpenCheck, Loader2, Download } from "lucide-react";
+import { BookOpenCheck, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
 
 const Index = () => {
-  const [pages, setPages] = useState<string[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [processingStatus, setProcessingStatus] = useState("");
+  const navigate = useNavigate();
 
   const handleFileSelect = async (file: File) => {
     setIsProcessing(true);
     try {
+      setProcessingStatus("Processando seu PDF...");
       const processedPages = await processPDF(file);
-      setPages(processedPages);
       toast.success(`${processedPages.length} páginas processadas com sucesso!`);
+
+      setProcessingStatus("Salvando seu flipbook...");
+      const { data, error } = await supabase
+        .from("flipbooks")
+        .insert([{ pages: processedPages }])
+        .select("id")
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      if (data) {
+        toast.success("Flipbook salvo! Redirecionando...");
+        navigate(`/flipbook/${data.id}`);
+      }
     } catch (error) {
-      console.error("Erro ao processar PDF:", error);
-      toast.error("Erro ao processar o PDF. Tente novamente.");
-    } finally {
+      console.error("Erro ao criar flipbook:", error);
+      toast.error("Erro ao criar o flipbook. Tente novamente.");
       setIsProcessing(false);
-    }
-  };
-
-  const handleReset = () => {
-    setPages([]);
-  };
-
-  const handleExport = async () => {
-    try {
-      await exportFlipbookAsPDF(pages);
-      toast.success("PDF exportado com sucesso!");
-    } catch (error) {
-      toast.error("Erro ao exportar PDF");
     }
   };
 
@@ -61,31 +63,11 @@ const Index = () => {
             <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
               <Loader2 className="w-12 h-12 text-primary animate-spin" />
               <p className="text-lg text-muted-foreground">
-                Processando seu PDF...
+                {processingStatus}
               </p>
             </div>
-          ) : pages.length === 0 ? (
-            <PDFUploader onFileSelect={handleFileSelect} />
           ) : (
-            <div className="space-y-8">
-              <div className="flex justify-center gap-3">
-                <Button
-                  onClick={handleReset}
-                  variant="secondary"
-                >
-                  Carregar outro PDF
-                </Button>
-                <Button
-                  onClick={handleExport}
-                  variant="default"
-                  className="gap-2"
-                >
-                  <Download className="w-4 h-4" />
-                  Exportar Flipbook
-                </Button>
-              </div>
-              <FlipBook pages={pages} />
-            </div>
+            <PDFUploader onFileSelect={handleFileSelect} />
           )}
         </main>
 
