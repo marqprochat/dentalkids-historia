@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, BookOpen, Trash2, LogOut, PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -23,6 +23,7 @@ interface Flipbook {
   id: string;
   created_at: string;
   pages: string[];
+  title: string;
 }
 
 const fetchMyFlipbooks = async (): Promise<Flipbook[]> => {
@@ -31,7 +32,7 @@ const fetchMyFlipbooks = async (): Promise<Flipbook[]> => {
 
   const { data, error } = await supabase
     .from("flipbooks")
-    .select("id, created_at, pages")
+    .select("id, created_at, pages, title")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });
 
@@ -130,8 +131,11 @@ const MyFlipbooks = () => {
                 <Card key={flipbook.id} className="hover:shadow-xl transition-shadow duration-300">
                   <CardHeader>
                     <CardTitle className="text-lg truncate">
-                      Flipbook criado em {new Date(flipbook.created_at).toLocaleDateString()}
+                      {flipbook.title}
                     </CardTitle>
+                    <CardDescription>
+                      Criado em {new Date(flipbook.created_at).toLocaleDateString()}
+                    </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="text-sm text-muted-foreground">
