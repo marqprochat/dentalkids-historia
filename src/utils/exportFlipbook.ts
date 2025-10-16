@@ -66,17 +66,18 @@ export const exportFlipbookAsHTML = (pages: string[]) => {
       justify-content: center !important;
       align-items: center !important;
     }
+    .stf__wrapper {
+      margin: 0 auto !important;
+    }
     .page {
       background: #f5f1e8;
-      display: none;
+      display: flex;
       align-items: center;
       justify-content: center;
       padding: 0;
       width: 100%;
       height: 100%;
-    }
-    .page.--left, .page.--right {
-      display: flex !important;
+      overflow: hidden;
     }
     .page img {
       width: 100%;
@@ -174,66 +175,54 @@ export const exportFlipbookAsHTML = (pages: string[]) => {
       const [pageFlip, setPageFlip] = useState(null);
 
       useEffect(() => {
-        const initFlipbook = () => {
-          if (containerRef.current && !pageFlip && window.PageFlip) {
-            try {
-              const isMobile = window.innerWidth <= 768;
-              const containerWidth = containerRef.current.offsetWidth;
-              
-              // Calcula tamanho baseado na tela disponível
-              let pageWidth, pageHeight;
-              
-              if (isMobile) {
-                // No mobile, usa largura menor para melhor visualização
-                pageWidth = Math.min(containerWidth * 0.42, window.innerWidth * 0.42);
-                pageHeight = Math.min(window.innerHeight * 0.55, pageWidth * 1.414);
-              } else {
-                pageWidth = Math.min(containerWidth * 0.4, 400);
-                pageHeight = pageWidth * 1.414;
-              }
-
-              const book = new window.PageFlip(containerRef.current, {
-                width: pageWidth,
-                height: pageHeight,
-                size: 'stretch',
-                minWidth: isMobile ? 120 : 200,
-                maxWidth: isMobile ? window.innerWidth * 0.45 : 500,
-                minHeight: isMobile ? 170 : 283,
-                maxHeight: isMobile ? window.innerHeight * 0.65 : 707,
-                maxShadowOpacity: 0.5,
-                showCover: true,
-                mobileScrollSupport: true,
-                drawShadow: true,
-                flippingTime: 600,
-                usePortrait: isMobile,
-                autoSize: false,
-                useMouseEvents: !isMobile,
-                swipeDistance: 30,
-                showPageCorners: true,
-                disableFlipByClick: false,
-                startPage: 0
-              });
-
-              book.loadFromHTML(document.querySelectorAll('.page'));
-              
-              book.on('flip', (e) => {
-                setCurrentPage(e.data);
-              });
-
-              book.on('changeState', (e) => {
-                console.log('State changed:', e.data);
-              });
-
-              setPageFlip(book);
-            } catch (error) {
-              console.error('Erro ao inicializar flipbook:', error);
+        if (containerRef.current && !pageFlip && window.PageFlip) {
+          try {
+            const isMobile = window.innerWidth <= 768;
+            const containerWidth = containerRef.current.offsetWidth;
+            
+            // Calcula tamanho baseado na tela disponível
+            let pageWidth, pageHeight;
+            
+            if (isMobile) {
+              pageWidth = Math.min(containerWidth * 0.85, 300);
+              pageHeight = pageWidth * 1.414;
+            } else {
+              pageWidth = Math.min(containerWidth * 0.4, 400);
+              pageHeight = pageWidth * 1.414;
             }
-          }
-        };
 
-        // Pequeno delay para garantir que tudo esteja renderizado
-        const timer = setTimeout(initFlipbook, 100);
-        return () => clearTimeout(timer);
+            const book = new window.PageFlip(containerRef.current, {
+              width: pageWidth,
+              height: pageHeight,
+              size: 'fixed',
+              minWidth: isMobile ? 200 : 300,
+              maxWidth: isMobile ? 320 : 500,
+              minHeight: isMobile ? 283 : 424,
+              maxHeight: isMobile ? 452 : 707,
+              maxShadowOpacity: 0.5,
+              showCover: true,
+              mobileScrollSupport: true,
+              drawShadow: true,
+              flippingTime: 600,
+              usePortrait: isMobile,
+              autoSize: true,
+              useMouseEvents: true,
+              swipeDistance: 30,
+              showPageCorners: true,
+              disableFlipByClick: false
+            });
+
+            book.loadFromHTML(document.querySelectorAll('.page'));
+            
+            book.on('flip', (e) => {
+              setCurrentPage(e.data);
+            });
+
+            setPageFlip(book);
+          } catch (error) {
+            console.error('Erro ao inicializar flipbook:', error);
+          }
+        }
       }, [pageFlip]);
 
       const nextPage = () => {
