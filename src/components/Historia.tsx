@@ -31,17 +31,17 @@ export const Historia = ({ pages }: HistoriaProps) => {
   if (pages.length === 0) return null;
 
   return (
-    <div className="flex flex-col items-center gap-6 w-full">
-      <div className="relative">
-        <div className="absolute -inset-4 bg-gradient-to-br from-book-spine/20 to-accent/20 blur-3xl rounded-3xl" />
+    <div className="flex flex-col items-center gap-2 w-full px-0">
+      <div className="relative w-full">
+        <div className="absolute -inset-1 bg-gradient-to-br from-book-spine/20 to-accent/20 blur-3xl rounded-3xl" />
         
-        <div className="relative rounded-2xl overflow-hidden shadow-[var(--shadow-book)]">
+        <div className="relative rounded-lg overflow-hidden shadow-[var(--shadow-book)]">
           <HTMLFlipBook
             ref={bookRef}
             width={550}
             height={733}
             size="stretch"
-            minWidth={315}
+            minWidth={280}
             maxWidth={1000}
             minHeight={400}
             maxHeight={1533}
@@ -65,7 +65,7 @@ export const Historia = ({ pages }: HistoriaProps) => {
           >
             {pages.map((page, index) => (
               <div key={index} className="page bg-book-page">
-                <div className="page-content h-full w-full flex items-center justify-center p-2">
+                <div className="page-content h-full w-full flex items-center justify-center p-0">
                   <img
                     src={page}
                     alt={`Página ${index + 1}`}
