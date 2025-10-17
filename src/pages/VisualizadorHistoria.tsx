@@ -79,7 +79,7 @@ const VisualizadorHistoria = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-book-page/30 to-background">
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-2 sm:px-6 lg:px-8 py-8">
         <header className="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4">
           <Logo linkTo={isAuthenticated ? "/" : undefined} className="h-10" />
           {isAuthenticated && (
