@@ -10,11 +10,24 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Logo from "@/components/Logo";
 
-// Função auxiliar para converter a imagem de base64 para um array de dados
+// Função auxiliar para converter base64 em Blob
+const base64ToBlob = (base64: string, mimeType: string = 'image/png'): Blob => {
+  // Remover cabeçalho do base64 se existir (data:image/png;base64,)
+  const base64Data = base64.replace(/^data:image\/\w+;base64,/, "");
+  const byteCharacters = atob(base64Data);
+  const byteNumbers = new Array(byteCharacters.length);
+  for (let i = 0; i < byteCharacters.length; i++) {
+    byteNumbers[i] = byteCharacters.charCodeAt(i);
+  }
+  const byteArray = new Uint8Array(byteNumbers);
+  return new Blob([byteArray], { type: mimeType });
+};
+
+// Função auxiliar para converter a imagem de base64 para um array de dados (agora com Blobs)
 const processPages = async (processedPages: string[]): Promise<any[]> => {
   return processedPages.map((pageData, index) => ({
     index,
-    data: pageData,
+    data: base64ToBlob(pageData),
   }));
 };
 

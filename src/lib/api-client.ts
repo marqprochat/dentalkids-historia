@@ -153,15 +153,42 @@ export const getFlipbook = async (id: string): Promise<ApiResponse<Flipbook>> =>
 export const createFlipbook = async (
   userId: string,
   title: string,
-  pages: any[] = []
+  pages: (string | Blob | any)[] = []
 ): Promise<ApiResponse<Flipbook>> => {
   try {
+    let body: any;
+    let headers: HeadersInit = {};
+
+    // Verificar se há arquivos (Blobs) para upload
+    const hasFiles = pages.some(p => p instanceof Blob || (p.data && p.data instanceof Blob));
+
+    if (hasFiles) {
+      const formData = new FormData();
+      formData.append('user_id', userId);
+      formData.append('title', title);
+
+      pages.forEach((page, index) => {
+        // Suporte para array de objetos { data: Blob } ou array de Blobs
+        const fileData = page instanceof Blob ? page : (page.data instanceof Blob ? page.data : null);
+
+        if (fileData) {
+          formData.append('pages', fileData, `page-${index + 1}.png`);
+        }
+      });
+
+      body = formData;
+      // Não definir Content-Type para FormData, o navegador define automaticamente com boundary
+    } else {
+      headers = {
+        'Content-Type': 'application/json',
+      };
+      body = JSON.stringify({ user_id: userId, title, pages });
+    }
+
     const response = await fetch(`${API_BASE_URL}/flipbooks`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ user_id: userId, title, pages }),
+      headers,
+      body,
     });
 
     const data = await response.json();

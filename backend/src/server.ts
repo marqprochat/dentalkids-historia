@@ -5,15 +5,44 @@ import express, { Express, Request, Response } from 'express';
 import cors from 'cors';
 import { PrismaClient } from '../generated/prisma';
 import bcrypt from 'bcryptjs';
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
 
 const app: Express = express();
 const prisma = new PrismaClient();
 const PORT = process.env.PORT || 3000;
 
+// Configuração do Multer para upload de arquivos
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadDir = path.join(__dirname, '../uploads');
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    // Nome único: timestamp + numero aleatorio + extensao original
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({
+  storage: storage,
+  limits: {
+    fileSize: 10 * 1024 * 1024, // Limite de 10MB por arquivo
+  }
+});
+
 // Middlewares
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
+// Servir arquivos estáticos (imagens dos flipbooks)
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Health check
 app.get('/health', (req: Request, res: Response) => {
@@ -182,22 +211,41 @@ app.get('/flipbooks/:id', async (req: Request, res: Response) => {
   }
 });
 
-// Criar flipbook
-app.post('/flipbooks', async (req: Request, res: Response) => {
+// Criar flipbook (com upload de arquivos)
+app.post('/flipbooks', upload.array('pages'), async (req: Request, res: Response) => {
   try {
-    const { user_id, title, pages } = req.body;
+    const { user_id, title } = req.body;
+    const files = req.files as Express.Multer.File[];
 
     if (!user_id) {
       res.status(400).json({ error: 'user_id é obrigatório' });
       return;
     }
 
+    // Processar arquivos enviados
+    let pageUrls: string[] = [];
+
+    if (files && files.length > 0) {
+      // Gerar URLs para os arquivos salvos
+      // Assumindo que o servidor está rodando na mesma máquina/domínio
+      // Em produção, você pode querer usar uma variável de ambiente para a URL base
+      const baseUrl = process.env.API_URL || `http://localhost:${PORT}`;
+
+      pageUrls = files.map(file => {
+        return `${baseUrl}/uploads/${file.filename}`;
+      });
+    } else if (req.body.pages && Array.isArray(req.body.pages)) {
+      // Fallback para o método antigo (base64 no body), caso o frontend ainda envie assim
+      // Mas idealmente devemos migrar para upload de arquivos
+      pageUrls = req.body.pages;
+    }
+
     const flipbook = await prisma.flipbooks.create({
       data: {
         user_id,
         title: title || 'Novo Flipbook',
-        pages: pages || [],
-        page_count: pages?.length || 0,
+        pages: pageUrls,
+        page_count: pageUrls.length,
       },
     });
 
@@ -235,6 +283,9 @@ app.delete('/flipbooks/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
+    // TODO: Deletar arquivos físicos associados ao flipbook
+    // Isso requer ler o flipbook antes de deletar para pegar os nomes dos arquivos
+
     await prisma.flipbooks.delete({
       where: { id },
     });
@@ -247,7 +298,7 @@ app.delete('/flipbooks/:id', async (req: Request, res: Response) => {
 });
 
 // Tratamento de erros global
-app.use((err: any, req: Request, res: Response) => {
+app.use((err: any, req: Request, res: Response, next: express.NextFunction) => {
   console.error('Erro global:', err);
   res.status(500).json({ error: 'Erro interno do servidor' });
 });
