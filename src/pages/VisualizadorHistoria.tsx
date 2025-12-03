@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { getFlipbook } from "@/lib/api-client";
 import { Historia } from "@/components/Historia";
 import { Loader2, AlertTriangle, Share2, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,7 @@ import Logo from "@/components/Logo";
 
 const VisualizadorHistoria = () => {
   const { id } = useParams<{ id: string }>();
-  const [pages, setPages] = useState<string[]>([]);
+  const [pages, setPages] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
@@ -25,18 +25,14 @@ const VisualizadorHistoria = () => {
 
       try {
         setLoading(true);
-        const { data, error } = await supabase
-          .from("flipbooks")
-          .select("pages")
-          .eq("id", id)
-          .single();
+        const result = await getFlipbook(id);
 
-        if (error) {
+        if (result.error) {
           throw new Error("História não encontrada ou erro na busca.");
         }
 
-        if (data && Array.isArray(data.pages)) {
-          setPages(data.pages);
+        if (result.data && Array.isArray(result.data.pages)) {
+          setPages(result.data.pages);
         } else {
           throw new Error("História não encontrada ou formato de dados inválido.");
         }

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { getFlipbooks, deleteFlipbook, logout, checkAuth } from "@/lib/api-client";
 import { Loader2, BookOpen, Trash2, LogOut, PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -27,59 +27,18 @@ interface Historia {
 }
 
 const fetchMinhasHistorias = async (): Promise<Historia[]> => {
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = checkAuth();
   if (!user) throw new Error("Usuário não autenticado.");
 
-  const { data, error } = await supabase
-    .from("flipbooks")
-    .select("id, created_at, title, page_count")
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: false });
-
-  if (error) throw error;
-  return data as Historia[];
+  const result = await getFlipbooks(user.id);
+  if (result.error) throw new Error(result.error);
+  
+  return (result.data || []) as Historia[];
 };
 
-const deleteHistoria = async (id: string) => {
-  // 1. Pega o caminho dos arquivos no Storage
-  const { data: historiaData, error: fetchError } = await supabase
-    .from('flipbooks')
-    .select('storage_path')
-    .eq('id', id)
-    .single();
-
-  if (fetchError) {
-    console.error("Erro ao buscar história para deletar:", fetchError);
-    throw new Error("Não foi possível encontrar a história para excluir.");
-  }
-
-  // 2. Se houver arquivos, remove a pasta do Storage
-  if (historiaData?.storage_path) {
-    const { data: files, error: listError } = await supabase.storage
-      .from('historias_pages')
-      .list(historiaData.storage_path);
-
-    if (listError) {
-      console.error("Erro ao listar arquivos no storage:", listError);
-      toast.error("Não foi possível limpar os arquivos antigos, mas a história será excluída.");
-    }
-
-    if (files && files.length > 0) {
-      const filePaths = files.map(file => `${historiaData.storage_path}/${file.name}`);
-      const { error: removeError } = await supabase.storage
-        .from('historias_pages')
-        .remove(filePaths);
-      
-      if (removeError) {
-        console.error("Erro ao remover arquivos do storage:", removeError);
-        toast.error("Não foi possível limpar os arquivos antigos, mas a história será excluída.");
-      }
-    }
-  }
-
-  // 3. Deleta o registro da história no banco de dados
-  const { error: deleteError } = await supabase.from("flipbooks").delete().eq("id", id);
-  if (deleteError) throw deleteError;
+const deleteHistoriaHandler = async (id: string) => {
+  const result = await deleteFlipbook(id);
+  if (result.error) throw new Error(result.error);
 };
 
 const MinhasHistorias = () => {
@@ -87,13 +46,19 @@ const MinhasHistorias = () => {
   const navigate = useNavigate();
   const [historiaParaExcluir, setHistoriaParaExcluir] = useState<string | null>(null);
 
+  // Redireciona para login se não autenticado
+  const user = checkAuth();
+  if (!user) {
+    navigate('/login');
+  }
+
   const { data: historias, isLoading, error } = useQuery<Historia[], Error>({
     queryKey: ["minhasHistorias"],
     queryFn: fetchMinhasHistorias,
   });
 
   const deleteMutation = useMutation({
-    mutationFn: deleteHistoria,
+    mutationFn: deleteHistoriaHandler,
     onSuccess: () => {
       toast.success("História excluída com sucesso!");
       queryClient.invalidateQueries({ queryKey: ["minhasHistorias"] });
@@ -106,14 +71,9 @@ const MinhasHistorias = () => {
   });
 
   const handleLogout = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      toast.error("Erro ao fazer logout.");
-      console.error(error);
-    } else {
-      toast.success("Logout realizado com sucesso.");
-      navigate('/login');
-    }
+    await logout();
+    toast.success("Logout realizado com sucesso.");
+    navigate('/login');
   };
 
   if (isLoading) {

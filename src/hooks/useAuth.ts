@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { checkAuth } from '@/lib/api-client';
 
 interface AuthState {
   isAuthenticated: boolean;
@@ -13,24 +13,15 @@ export const useAuth = (): AuthState => {
   });
 
   useEffect(() => {
-    const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+    const checkSession = () => {
+      const user = checkAuth();
       setAuthState({
-        isAuthenticated: !!session,
+        isAuthenticated: !!user,
         isLoading: false,
       });
     };
 
     checkSession();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setAuthState({
-        isAuthenticated: !!session,
-        isLoading: false,
-      });
-    });
-
-    return () => subscription.unsubscribe();
   }, []);
 
   return authState;

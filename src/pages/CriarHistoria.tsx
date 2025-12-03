@@ -4,17 +4,19 @@ import { PDFUploader } from "@/components/PDFUploader";
 import { processPDF } from "@/utils/pdfProcessor";
 import { Loader2, LogOut, Home } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { createFlipbook, logout, checkAuth } from "@/lib/api-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Logo from "@/components/Logo";
 
-// Função auxiliar para converter a imagem de base64 para um formato de upload (Blob)
-const dataURLtoBlob = async (dataUrl: string): Promise<Blob> => {
-    const res = await fetch(dataUrl);
-    return await res.blob();
-}
+// Função auxiliar para converter a imagem de base64 para um array de dados
+const processPages = async (processedPages: string[]): Promise<any[]> => {
+  return processedPages.map((pageData, index) => ({
+    index,
+    data: pageData,
+  }));
+};
 
 const CriarHistoria = () => {
   const [title, setTitle] = useState("");
@@ -23,14 +25,9 @@ const CriarHistoria = () => {
   const navigate = useNavigate();
 
   const handleLogout = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      toast.error("Erro ao fazer logout.");
-      console.error(error);
-    } else {
-      toast.success("Logout realizado com sucesso.");
-      navigate('/login');
-    }
+    await logout();
+    toast.success("Logout realizado com sucesso.");
+    navigate('/login');
   };
 
   const handleFileSelect = async (file: File) => {
@@ -41,7 +38,7 @@ const CriarHistoria = () => {
 
     setIsProcessing(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = checkAuth();
       if (!user) {
         toast.error("Você precisa estar logado para criar uma história.");
         navigate('/login');
@@ -52,54 +49,19 @@ const CriarHistoria = () => {
       const processedPages = await processPDF(file);
       toast.success(`${processedPages.length} páginas processadas com sucesso!`);
 
-      const pageUrls: string[] = [];
-      const storagePath = `${user.id}/${Date.now()}`;
-
-      for (let i = 0; i < processedPages.length; i++) {
-        setProcessingStatus(`Fazendo upload da página ${i + 1} de ${processedPages.length}...`);
-        const pageData = processedPages[i];
-        const blob = await dataURLtoBlob(pageData);
-
-        const filePath = `${storagePath}/page_${i + 1}.png`;
-        
-        const { error: uploadError } = await supabase.storage
-          .from('historias_pages')
-          .upload(filePath, blob, {
-            cacheControl: '3600',
-            upsert: false,
-          });
-
-        if (uploadError) {
-          throw uploadError;
-        }
-
-        const { data: { publicUrl } } = supabase.storage
-          .from('historias_pages')
-          .getPublicUrl(filePath);
-        
-        pageUrls.push(publicUrl);
-      }
+      setProcessingStatus("Preparando dados da história...");
+      const pagesData = await processPages(processedPages);
 
       setProcessingStatus("Finalizando e salvando sua história...");
-      const { data, error } = await supabase
-        .from("flipbooks")
-        .insert([{ 
-          pages: pageUrls,
-          user_id: user.id, 
-          title: title.trim(),
-          page_count: processedPages.length,
-          storage_path: storagePath
-        }])
-        .select("id")
-        .single();
+      const result = await createFlipbook(user.id, title.trim(), pagesData);
 
-      if (error) {
-        throw error;
+      if (result.error) {
+        throw new Error(result.error);
       }
 
-      if (data) {
+      if (result.data) {
         toast.success("História salva! Redirecionando...");
-        navigate(`/historia/${data.id}`);
+        navigate(`/historia/${result.data.id}`);
       }
     } catch (error: any) {
       console.error("Erro ao criar história:", error);

@@ -1,34 +1,25 @@
 import { useEffect, useState } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
+import { checkAuth } from '@/lib/api-client';
 import { Loader2 } from 'lucide-react';
 
 const AuthLayout = () => {
-  const [session, setSession] = useState<any>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setSession(session);
+    const checkSession = () => {
+      const user = checkAuth();
+      setIsAuthenticated(!!user);
       setLoading(false);
       
-      if (!session) {
+      if (!user) {
         navigate('/login');
       }
     };
 
     checkSession();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      if (!session && _event === 'SIGNED_OUT') {
-        navigate('/login');
-      }
-    });
-
-    return () => subscription.unsubscribe();
   }, [navigate]);
 
   if (loading) {
@@ -39,8 +30,8 @@ const AuthLayout = () => {
     );
   }
 
-  if (!session) {
-    // Se não houver sessão após o carregamento, não renderiza nada, pois o navigate já foi chamado.
+  if (!isAuthenticated) {
+    // Se não houver autenticação após o carregamento, não renderiza nada, pois o navigate já foi chamado.
     return null; 
   }
 
