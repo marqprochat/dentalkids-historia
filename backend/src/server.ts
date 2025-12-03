@@ -303,7 +303,8 @@ app.delete('/flipbooks/:id', async (req: Request, res: Response) => {
 
 // Rota Catch-All para SPA (React)
 // Qualquer requisição que não seja API ou arquivo estático será redirecionada para o index.html
-app.get('*', (req: Request, res: Response) => {
+// Nota: Express 5 requer (.*) em vez de *
+app.get(/(.*)/, (req: Request, res: Response) => {
   // Ignorar requisições que parecem ser para API (opcional, mas boa prática)
   if (req.path.startsWith('/auth') || req.path.startsWith('/flipbooks') || req.path.startsWith('/uploads')) {
     res.status(404).json({ error: 'Endpoint não encontrado' });
