@@ -44,6 +44,10 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 // Servir arquivos estáticos (imagens dos flipbooks)
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
+// Servir arquivos estáticos do Frontend (React/Vite)
+// Em produção (Docker), a pasta 'public' estará no mesmo nível da pasta 'dist' do backend
+app.use(express.static(path.join(__dirname, '../public')));
+
 // Health check
 app.get('/health', (req: Request, res: Response) => {
   res.json({ status: 'Server is running' });
@@ -294,6 +298,24 @@ app.delete('/flipbooks/:id', async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Erro ao deletar flipbook:', error);
     res.status(500).json({ error: 'Erro ao deletar flipbook' });
+  }
+});
+
+// Rota Catch-All para SPA (React)
+// Qualquer requisição que não seja API ou arquivo estático será redirecionada para o index.html
+app.get('*', (req: Request, res: Response) => {
+  // Ignorar requisições que parecem ser para API (opcional, mas boa prática)
+  if (req.path.startsWith('/auth') || req.path.startsWith('/flipbooks') || req.path.startsWith('/uploads')) {
+    res.status(404).json({ error: 'Endpoint não encontrado' });
+    return;
+  }
+
+  const indexPath = path.join(__dirname, '../public/index.html');
+  if (fs.existsSync(indexPath)) {
+    res.sendFile(indexPath);
+  } else {
+    // Fallback para desenvolvimento ou se o build não existir
+    res.status(404).send('Frontend build not found. Run npm run build.');
   }
 });
 
