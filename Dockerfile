@@ -30,6 +30,8 @@ COPY --from=backend-builder /app/backend/package*.json ./
 COPY --from=backend-builder /app/backend/node_modules ./node_modules
 COPY --from=backend-builder /app/backend/dist ./dist
 COPY --from=backend-builder /app/backend/prisma ./prisma
+# Copiar o cliente gerado (que está em backend/generated conforme schema.prisma)
+COPY --from=backend-builder /app/backend/generated ./generated
 
 # Copiar o build do frontend para uma pasta pública no backend
 COPY --from=frontend-builder /app/dist ./public
