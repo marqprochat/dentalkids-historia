@@ -230,13 +230,10 @@ app.post('/flipbooks', upload.array('pages'), async (req: Request, res: Response
     let pageUrls: string[] = [];
 
     if (files && files.length > 0) {
-      // Gerar URLs para os arquivos salvos
-      // Assumindo que o servidor está rodando na mesma máquina/domínio
-      // Em produção, você pode querer usar uma variável de ambiente para a URL base
-      const baseUrl = process.env.API_URL || `http://localhost:${PORT}`;
-
+      // Salvar caminho relativo para funcionar em qualquer domínio
+      // O frontend irá resolver isso relativo à URL atual
       pageUrls = files.map(file => {
-        return `${baseUrl}/uploads/${file.filename}`;
+        return `/uploads/${file.filename}`;
       });
     } else if (req.body.pages && Array.isArray(req.body.pages)) {
       // Fallback para o método antigo (base64 no body), caso o frontend ainda envie assim
