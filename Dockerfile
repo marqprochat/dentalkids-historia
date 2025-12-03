@@ -2,7 +2,8 @@
 FROM node:20-alpine AS frontend-builder
 WORKDIR /app
 COPY package*.json ./
-RUN npm install
+# Usar npm ci para instalação mais rápida e confiável (consome menos memória que install)
+RUN npm ci --no-audit --no-fund
 COPY . .
 RUN npm run build
 
@@ -12,7 +13,8 @@ WORKDIR /app/backend
 COPY backend/package*.json ./
 # Copiar pasta prisma antes do install para o postinstall do @prisma/client funcionar
 COPY backend/prisma ./prisma/
-RUN npm install
+# Usar npm ci aqui também
+RUN npm ci --no-audit --no-fund
 COPY backend .
 # Gerar o cliente Prisma novamente para garantir
 RUN npx prisma generate
