@@ -10,9 +10,11 @@ RUN npm run build
 FROM node:20-alpine AS backend-builder
 WORKDIR /app/backend
 COPY backend/package*.json ./
+# Copiar pasta prisma antes do install para o postinstall do @prisma/client funcionar
+COPY backend/prisma ./prisma/
 RUN npm install
 COPY backend .
-# Gerar o cliente Prisma
+# Gerar o cliente Prisma novamente para garantir
 RUN npx prisma generate
 RUN npm run build
 
