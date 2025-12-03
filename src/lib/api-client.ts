@@ -1,5 +1,6 @@
 // API Client para comunicação com o backend PostgreSQL
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+// Em produção (se VITE_API_URL não estiver definido), usa URL relativa (mesmo domínio)
+const API_BASE_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '' : 'http://localhost:3000');
 
 interface ApiResponse<T> {
   data?: T;
