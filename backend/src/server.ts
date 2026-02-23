@@ -298,6 +298,56 @@ app.delete('/flipbooks/:id', async (req: Request, res: Response) => {
   }
 });
 
+// Rota para visualização de história com meta tags dinâmicas
+app.get('/historia/:id', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    // Validar se o ID é um UUID válido para evitar erros no Prisma
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(id)) {
+      const indexPath = path.join(__dirname, '../public/index.html');
+      if (fs.existsSync(indexPath)) {
+        return res.sendFile(indexPath);
+      }
+      return res.status(404).send('Not found');
+    }
+
+    const flipbook = await prisma.flipbooks.findUnique({
+      where: { id },
+    });
+
+    const indexPath = path.join(__dirname, '../public/index.html');
+    if (!fs.existsSync(indexPath)) {
+      res.status(404).send('Frontend build not found.');
+      return;
+    }
+
+    let html = fs.readFileSync(indexPath, 'utf8');
+
+    if (flipbook) {
+      const title = `Título: ${flipbook.title}`;
+      const description = 'Livros Infantis Gratuitos e Educativos | Biblioteca Dentalkids';
+
+      // Substituir meta tags de forma robusta
+      html = html.replace(/<title>.*?<\/title>/, `<title>${title}</title>`);
+      html = html.replace(/<meta property="og:title" content=".*?" \/>/g, `<meta property="og:title" content="${title}" />`);
+      html = html.replace(/<meta name="description" content=".*?" \/>/g, `<meta name="description" content="${description}" />`);
+      html = html.replace(/<meta property="og:description" content=".*?" \/>/g, `<meta property="og:description" content="${description}" />`);
+    }
+
+    res.send(html);
+  } catch (error) {
+    console.error('Erro ao servir história com meta tags:', error);
+    const indexPath = path.join(__dirname, '../public/index.html');
+    if (fs.existsSync(indexPath)) {
+      res.sendFile(indexPath);
+    } else {
+      res.status(500).send('Erro interno do servidor');
+    }
+  }
+});
+
 // Rota Catch-All para SPA (React)
 // Qualquer requisição que não seja API ou arquivo estático será redirecionada para o index.html
 // Nota: Express 5 requer (.*) em vez de *
