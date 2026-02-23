@@ -329,11 +329,31 @@ app.get('/historia/:id', async (req: Request, res: Response) => {
       const title = `Título: ${flipbook.title}`;
       const description = 'Livros Infantis Gratuitos e Educativos | Biblioteca Dentalkids';
 
-      // Substituir meta tags de forma robusta
-      html = html.replace(/<title>.*?<\/title>/, `<title>${title}</title>`);
-      html = html.replace(/<meta property="og:title" content=".*?" \/>/g, `<meta property="og:title" content="${title}" />`);
-      html = html.replace(/<meta name="description" content=".*?" \/>/g, `<meta name="description" content="${description}" />`);
-      html = html.replace(/<meta property="og:description" content=".*?" \/>/g, `<meta property="og:description" content="${description}" />`);
+      // Obter URL absoluta para a imagem (melhor suporte para compartilhamento)
+      const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+      const host = req.get('host');
+      const absoluteLogoUrl = `${protocol}://${host}/dentalkids_logo.png`;
+
+      // Substituir meta tags de forma robusta (suportando variações de ordem de atributos)
+      html = html.replace(/<title>.*?<\/title>/i, `<title>${title}</title>`);
+
+      // OG Title
+      html = html.replace(/<meta\s+property="og:title"\s+content=".*?"\s*\/?>/i, `<meta property="og:title" content="${title}" />`);
+      html = html.replace(/<meta\s+content=".*?"\s+property="og:title"\s*\/?>/i, `<meta property="og:title" content="${title}" />`);
+
+      // Descriptions
+      html = html.replace(/<meta\s+name="description"\s+content=".*?"\s*\/?>/i, `<meta name="description" content="${description}" />`);
+      html = html.replace(/<meta\s+content=".*?"\s+name="description"\s*\/?>/i, `<meta name="description" content="${description}" />`);
+
+      html = html.replace(/<meta\s+property="og:description"\s+content=".*?"\s*\/?>/i, `<meta property="og:description" content="${description}" />`);
+      html = html.replace(/<meta\s+content=".*?"\s+property="og:description"\s*\/?>/i, `<meta property="og:description" content="${description}" />`);
+
+      // Imagem (Forçar URL absoluta para melhor visualização no Instagram/WhatsApp)
+      html = html.replace(/<meta\s+property="og:image"\s+content=".*?"\s*\/?>/i, `<meta property="og:image" content="${absoluteLogoUrl}" />`);
+      html = html.replace(/<meta\s+content=".*?"\s+property="og:image"\s*\/?>/i, `<meta property="og:image" content="${absoluteLogoUrl}" />`);
+
+      html = html.replace(/<meta\s+name="twitter:image"\s+content=".*?"\s*\/?>/i, `<meta name="twitter:image" content="${absoluteLogoUrl}" />`);
+      html = html.replace(/<meta\s+content=".*?"\s+name="twitter:image"\s*\/?>/i, `<meta name="twitter:image" content="${absoluteLogoUrl}" />`);
     }
 
     res.send(html);
