@@ -8,32 +8,24 @@ import bcrypt from 'bcryptjs';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import { createClient } from '@supabase/supabase-js';
 
 const app: Express = express();
 const prisma = new PrismaClient();
 const PORT = process.env.PORT || 3000;
 
-// Configuração do Multer para upload de arquivos
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const uploadDir = path.join(__dirname, '../uploads');
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    // Nome único: timestamp + numero aleatorio + extensao original
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
-  }
-});
+const supabase = createClient(
+  process.env.SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_KEY!
+);
+const STORAGE_BUCKET = 'flipbooks';
 
+// Multer usa memória temporária — o arquivo vai direto para o Supabase Storage
 const upload = multer({
-  storage: storage,
+  storage: multer.memoryStorage(),
   limits: {
-    fileSize: 10 * 1024 * 1024, // Limite de 10MB por arquivo
-  }
+    fileSize: 10 * 1024 * 1024,
+  },
 });
 
 // Middlewares
@@ -41,7 +33,7 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
-// Servir arquivos estáticos (imagens dos flipbooks)
+// Mantido para compatibilidade com flipbooks antigos que ainda usam caminhos locais
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Servir arquivos estáticos do Frontend (React/Vite)
@@ -215,7 +207,7 @@ app.get('/flipbooks/:id', async (req: Request, res: Response) => {
   }
 });
 
-// Criar flipbook (com upload de arquivos)
+// Criar flipbook (com upload de arquivos para Supabase Storage)
 app.post('/flipbooks', upload.array('pages'), async (req: Request, res: Response) => {
   try {
     const { user_id, title } = req.body;
@@ -226,18 +218,30 @@ app.post('/flipbooks', upload.array('pages'), async (req: Request, res: Response
       return;
     }
 
-    // Processar arquivos enviados
     let pageUrls: string[] = [];
 
     if (files && files.length > 0) {
-      // Salvar caminho relativo para funcionar em qualquer domínio
-      // O frontend irá resolver isso relativo à URL atual
-      pageUrls = files.map(file => {
-        return `/uploads/${file.filename}`;
-      });
+      pageUrls = await Promise.all(files.map(async (file) => {
+        const ext = path.extname(file.originalname);
+        const fileName = `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
+
+        const { error } = await supabase.storage
+          .from(STORAGE_BUCKET)
+          .upload(fileName, file.buffer, {
+            contentType: file.mimetype,
+            upsert: false,
+          });
+
+        if (error) throw new Error(`Erro no upload para Storage: ${error.message}`);
+
+        const { data } = supabase.storage
+          .from(STORAGE_BUCKET)
+          .getPublicUrl(fileName);
+
+        return data.publicUrl;
+      }));
     } else if (req.body.pages && Array.isArray(req.body.pages)) {
-      // Fallback para o método antigo (base64 no body), caso o frontend ainda envie assim
-      // Mas idealmente devemos migrar para upload de arquivos
+      // Fallback para base64 legado
       pageUrls = req.body.pages;
     }
 
@@ -284,12 +288,22 @@ app.delete('/flipbooks/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
-    // TODO: Deletar arquivos físicos associados ao flipbook
-    // Isso requer ler o flipbook antes de deletar para pegar os nomes dos arquivos
+    const flipbook = await prisma.flipbooks.findUnique({ where: { id } });
 
-    await prisma.flipbooks.delete({
-      where: { id },
-    });
+    if (flipbook && Array.isArray(flipbook.pages)) {
+      const fileNames = (flipbook.pages as string[])
+        .map((url) => {
+          // Extrai só o nome do arquivo da URL pública do Supabase
+          try { return new URL(url).pathname.split('/').pop() ?? null; } catch { return null; }
+        })
+        .filter((name): name is string => !!name);
+
+      if (fileNames.length > 0) {
+        await supabase.storage.from(STORAGE_BUCKET).remove(fileNames);
+      }
+    }
+
+    await prisma.flipbooks.delete({ where: { id } });
 
     res.status(204).send();
   } catch (error) {
