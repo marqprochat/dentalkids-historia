@@ -8,15 +8,18 @@ import bcrypt from 'bcryptjs';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
-import { createClient } from '@supabase/supabase-js';
+import { StorageClient } from '@supabase/storage-js';
 
 const app: Express = express();
 const prisma = new PrismaClient();
 const PORT = process.env.PORT || 3000;
 
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_KEY!
+const supabaseStorage = new StorageClient(
+  `${process.env.SUPABASE_URL}/storage/v1`,
+  {
+    apikey: process.env.SUPABASE_SERVICE_KEY!,
+    Authorization: `Bearer ${process.env.SUPABASE_SERVICE_KEY!}`,
+  }
 );
 const STORAGE_BUCKET = 'flipbooks';
 
@@ -225,7 +228,7 @@ app.post('/flipbooks', upload.array('pages'), async (req: Request, res: Response
         const ext = path.extname(file.originalname);
         const fileName = `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
 
-        const { error } = await supabase.storage
+        const { error } = await supabaseStorage
           .from(STORAGE_BUCKET)
           .upload(fileName, file.buffer, {
             contentType: file.mimetype,
@@ -234,7 +237,7 @@ app.post('/flipbooks', upload.array('pages'), async (req: Request, res: Response
 
         if (error) throw new Error(`Erro no upload para Storage: ${error.message}`);
 
-        const { data } = supabase.storage
+        const { data } = supabaseStorage
           .from(STORAGE_BUCKET)
           .getPublicUrl(fileName);
 
@@ -299,7 +302,7 @@ app.delete('/flipbooks/:id', async (req: Request, res: Response) => {
         .filter((name): name is string => !!name);
 
       if (fileNames.length > 0) {
-        await supabase.storage.from(STORAGE_BUCKET).remove(fileNames);
+        await supabaseStorage.from(STORAGE_BUCKET).remove(fileNames);
       }
     }
 
