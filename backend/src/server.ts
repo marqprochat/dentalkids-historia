@@ -283,6 +283,75 @@ app.put('/flipbooks/:id', async (req: Request, res: Response) => {
   }
 });
 
+// Atualizar páginas do flipbook (re-upload de PDF, mantém o mesmo link)
+app.put('/flipbooks/:id/pages', upload.array('pages'), async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { title } = req.body;
+    const files = req.files as Express.Multer.File[];
+
+    const flipbook = await prisma.flipbooks.findUnique({ where: { id } });
+    if (!flipbook) {
+      res.status(404).json({ error: 'Flipbook não encontrado' });
+      return;
+    }
+
+    // Apagar arquivos antigos do Storage
+    if (Array.isArray(flipbook.pages)) {
+      const oldFileNames = (flipbook.pages as string[])
+        .map((url) => {
+          try { return new URL(url).pathname.split('/').pop() ?? null; } catch { return null; }
+        })
+        .filter((name): name is string => !!name);
+
+      if (oldFileNames.length > 0) {
+        await supabaseStorage.from(STORAGE_BUCKET).remove(oldFileNames);
+      }
+    }
+
+    // Upload dos novos arquivos
+    let pageUrls: string[] = [];
+
+    if (files && files.length > 0) {
+      pageUrls = await Promise.all(files.map(async (file) => {
+        const ext = path.extname(file.originalname);
+        const fileName = `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
+
+        const { error } = await supabaseStorage
+          .from(STORAGE_BUCKET)
+          .upload(fileName, file.buffer, {
+            contentType: file.mimetype,
+            upsert: false,
+          });
+
+        if (error) throw new Error(`Erro no upload para Storage: ${error.message}`);
+
+        const { data } = supabaseStorage
+          .from(STORAGE_BUCKET)
+          .getPublicUrl(fileName);
+
+        return data.publicUrl;
+      }));
+    } else if (req.body.pages && Array.isArray(req.body.pages)) {
+      pageUrls = req.body.pages;
+    }
+
+    const updated = await prisma.flipbooks.update({
+      where: { id },
+      data: {
+        title: title || flipbook.title,
+        pages: pageUrls,
+        page_count: pageUrls.length,
+      },
+    });
+
+    res.json(updated);
+  } catch (error) {
+    console.error('Erro ao atualizar páginas do flipbook:', error);
+    res.status(500).json({ error: 'Erro ao atualizar história' });
+  }
+});
+
 // Deletar flipbook
 app.delete('/flipbooks/:id', async (req: Request, res: Response) => {
   try {

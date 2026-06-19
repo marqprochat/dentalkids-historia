@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index"; // Agora é MinhasHistorias
 import CriarHistoria from "./pages/CriarHistoria";
+import EditarHistoria from "./pages/EditarHistoria";
 import NotFound from "./pages/NotFound";
 import VisualizadorHistoria from "./pages/VisualizadorHistoria";
 import Login from "./pages/Login";
@@ -27,6 +28,7 @@ const App = () => (
           <Route element={<AuthLayout />}>
             <Route path="/" element={<Index />} /> {/* Dashboard */}
             <Route path="/create" element={<CriarHistoria />} /> {/* Criação */}
+            <Route path="/edit/:id" element={<EditarHistoria />} /> {/* Edição */}
           </Route>
           
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

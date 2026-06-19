@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getFlipbooks, deleteFlipbook, logout, checkAuth } from "@/lib/api-client";
-import { Loader2, BookOpen, Trash2, LogOut, PlusCircle } from "lucide-react";
+import { Loader2, BookOpen, Trash2, LogOut, PlusCircle, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { toast } from "sonner";
@@ -145,7 +145,13 @@ const MinhasHistorias = () => {
                           Ver
                         </Link>
                       </Button>
-                      
+
+                      <Button asChild variant="outline" size="icon" title="Editar história">
+                        <Link to={`/edit/${historia.id}`}>
+                          <Pencil className="w-4 h-4" />
+                        </Link>
+                      </Button>
+
                       <AlertDialog open={historiaParaExcluir === historia.id} onOpenChange={(open) => setHistoriaParaExcluir(open ? historia.id : null)}>
                         <AlertDialogTrigger asChild>
                           <Button variant="destructive" size="icon" disabled={deleteMutation.isPending}>

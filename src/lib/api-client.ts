@@ -230,6 +230,49 @@ export const updateFlipbook = async (
   }
 };
 
+export const updateFlipbookPages = async (
+  id: string,
+  title: string,
+  pages: (string | Blob | any)[]
+): Promise<ApiResponse<Flipbook>> => {
+  try {
+    const formData = new FormData();
+    formData.append('title', title);
+
+    const hasFiles = pages.some(p => p instanceof Blob || (p.data && p.data instanceof Blob));
+
+    if (hasFiles) {
+      pages.forEach((page, index) => {
+        const fileData = page instanceof Blob ? page : (page.data instanceof Blob ? page.data : null);
+        if (fileData) {
+          formData.append('pages', fileData, `page-${index + 1}.png`);
+        }
+      });
+    } else {
+      pages.forEach((page, index) => {
+        if (typeof page === 'string') {
+          formData.append('pages', new Blob([page], { type: 'text/plain' }), `page-${index + 1}.txt`);
+        }
+      });
+    }
+
+    const response = await fetch(`${API_BASE_URL}/flipbooks/${id}/pages`, {
+      method: 'PUT',
+      body: formData,
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      return { error: data.error || 'Erro ao atualizar história' };
+    }
+
+    return { data };
+  } catch (error) {
+    return { error: 'Erro ao atualizar história' };
+  }
+};
+
 export const deleteFlipbook = async (id: string): Promise<ApiResponse<void>> => {
   try {
     const response = await fetch(`${API_BASE_URL}/flipbooks/${id}`, {
