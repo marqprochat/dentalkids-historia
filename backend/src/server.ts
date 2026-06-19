@@ -8,19 +8,16 @@ import bcrypt from 'bcryptjs';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
-import { StorageClient } from '@supabase/storage-js';
+import { createClient } from '@supabase/supabase-js';
 
 const app: Express = express();
 const prisma = new PrismaClient();
 const PORT = process.env.PORT || 3000;
 
-const supabaseStorage = new StorageClient(
-  `${process.env.SUPABASE_URL}/storage/v1`,
-  {
-    apikey: process.env.SUPABASE_SERVICE_KEY!,
-    Authorization: `Bearer ${process.env.SUPABASE_SERVICE_KEY!}`,
-  }
-);
+const supabaseStorage = createClient(
+  process.env.SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_KEY!
+).storage;
 const STORAGE_BUCKET = 'flipbooks';
 
 // Multer usa memória temporária — o arquivo vai direto para o Supabase Storage

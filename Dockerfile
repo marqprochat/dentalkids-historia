@@ -1,5 +1,5 @@
 # Estágio 1: Build do Frontend
-FROM node:20-alpine AS frontend-builder
+FROM node:22-alpine AS frontend-builder
 WORKDIR /app
 COPY package*.json ./
 # Usar npm ci para instalação mais rápida e confiável (consome menos memória que install)
@@ -8,7 +8,7 @@ COPY . .
 RUN npm run build
 
 # Estágio 2: Build do Backend
-FROM node:20-alpine AS backend-builder
+FROM node:22-alpine AS backend-builder
 WORKDIR /app/backend
 COPY backend/package*.json ./
 # Copiar pasta prisma antes do install para o postinstall do @prisma/client funcionar
@@ -21,7 +21,7 @@ RUN npx prisma generate
 RUN npm run build
 
 # Estágio 3: Runtime de Produção
-FROM node:20-alpine
+FROM node:22-alpine
 WORKDIR /app
 
 # Instalar dependências de produção apenas (opcional, mas bom para reduzir tamanho)
